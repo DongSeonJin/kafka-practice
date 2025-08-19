@@ -1,4 +1,4 @@
-package com.example.kafkaPractice.common.kafka.service;
+package com.example.kafkaPractice.common.kafka.consumer;
 
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;

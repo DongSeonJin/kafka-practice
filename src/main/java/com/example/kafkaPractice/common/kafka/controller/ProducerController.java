@@ -1,12 +1,12 @@
-package com.example.kafkaPractice.common.kafka.service;
+package com.example.kafkaPractice.common.kafka.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RestController;
 
-@Service
+@RestController
 @RequiredArgsConstructor
-public class KafkaProducerService {
+public class ProducerController {
 
     private final KafkaTemplate<String, String> kafkaTemplate;
     private static final String TOPIC_NAME = "my-topic";
