@@ -1,7 +1,10 @@
 package com.example.kafkaPractice.common.kafka.controller;
 
+import com.example.kafkaPractice.common.kafka.config.KafkaTopicConfig;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -11,8 +14,9 @@ public class ProducerController {
     private final KafkaTemplate<String, String> kafkaTemplate;
     private static final String TOPIC_NAME = "my-topic";
 
-    public void sendMessage(String message) {
+    @PostMapping("/send")
+    public void sendMessage(@RequestParam("message") String message) {
         System.out.println("Sending message: " + message);
-        kafkaTemplate.send(TOPIC_NAME, message);
+        kafkaTemplate.send(KafkaTopicConfig.TEST_TOPIC_NAME, message);
     }
 }

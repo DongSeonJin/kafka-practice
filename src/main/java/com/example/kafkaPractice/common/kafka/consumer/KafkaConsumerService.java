@@ -1,5 +1,6 @@
 package com.example.kafkaPractice.common.kafka.consumer;
 
+import com.example.kafkaPractice.common.kafka.config.KafkaTopicConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
@@ -8,15 +9,23 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class KafkaConsumerService {
 
-    private static final String TOPIC_NAME = "test-topic";
-    private static final String GROUP_ID = "my-group";
-
     @KafkaListener(
-            topics = TOPIC_NAME,
-            groupId = GROUP_ID,
+            topics = KafkaTopicConfig.TEST_TOPIC_NAME,
+            groupId = "group-a",
             containerFactory = "rebalanceContainerFactory"
     )
-    public void listen(String message) {
-        log.info("📨 Received message: {}", message);
+    public void consumeFromGroupA(String message) {
+        log.info("[Analytics Team - Group A] Consumed message: %s%n", message);
     }
+
+    @KafkaListener(
+            topics =KafkaTopicConfig.TEST_TOPIC_NAME,
+            groupId = "group-b",
+            containerFactory = "rebalanceContainerFactory"
+    )
+    public void consumeFromGroupB(String message) {
+        log.info("[Analytics Team - Group B] Consumed message: %s%n", message);
+    }
+
+
 }
