@@ -16,7 +16,7 @@ public class ProducerController {
 
     @PostMapping("/send")
     public void sendMessage(@RequestParam("message") String message) {
-        System.out.println("Sending message: " + message);
+        System.out.println("[PRODUCER] Sending message: " + message);
         kafkaTemplate.send(KafkaTopicConfig.TEST_TOPIC_NAME, message);
     }
 }
