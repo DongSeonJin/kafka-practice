@@ -13,11 +13,14 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 public interface KafkaAdminService {
+
     boolean createTopic(String topicName, int partitions, int replicationFactor);
 
     void describeTopic(String topicName);
 
     Set<String> getTopicList(String topicName);
+
+    void describeTopicAsync(String topicName);
 
     @Service
     @Slf4j
@@ -73,6 +76,24 @@ public interface KafkaAdminService {
                 log.error("토픽 목록 조회 중 오류가 발생했습니다: {}", e.getMessage());
                 // 실패 시에는 null 대신 비어있는 컬렉션을 반환하는 것이 더 안전하다.
                 return Collections.emptySet();
+            }
+        }
+
+        @Override
+        public void describeTopicAsync(String topicName) {
+            try (AdminClient adminClient = AdminClient.create(kafkaAdmin.getConfigurationProperties())) {
+                DescribeTopicsResult result = adminClient.describeTopics(Collections.singleton(topicName));
+                KafkaFuture<Map<String, TopicDescription>> future = result.allTopicNames();
+
+                // whenComplete 콜백 등록
+                future.whenComplete((topicInfoMap, throwable) -> {
+                    if (throwable == null) {
+                        TopicDescription description = topicInfoMap.get(topicName);
+                        log.info("(Callback) 토픽 정보 [{}]: {}",  topicName, description);
+                    } else {
+                        log.error("(Callback) 토픽 '{}' 정보 조회 중 오류 발생: {}",  topicName, throwable.getMessage());
+                    }
+                });
             }
         }
     }
