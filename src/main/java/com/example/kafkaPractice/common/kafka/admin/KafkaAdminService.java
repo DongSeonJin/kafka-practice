@@ -4,9 +4,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.*;
 import org.apache.kafka.common.KafkaFuture;
+import org.apache.kafka.common.config.ConfigResource;
 import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.stereotype.Service;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -21,6 +23,8 @@ public interface KafkaAdminService {
     Set<String> getTopicList(String topicName);
 
     void describeTopicAsync(String topicName);
+
+    void describeTopicConfig(String topicName);
 
     @Service
     @Slf4j
@@ -89,11 +93,35 @@ public interface KafkaAdminService {
                 future.whenComplete((topicInfoMap, throwable) -> {
                     if (throwable == null) {
                         TopicDescription description = topicInfoMap.get(topicName);
-                        log.info("(Callback) 토픽 정보 [{}]: {}",  topicName, description);
+                        log.info("(Callback) 토픽 정보 [{}]: {}", topicName, description);
                     } else {
-                        log.error("(Callback) 토픽 '{}' 정보 조회 중 오류 발생: {}",  topicName, throwable.getMessage());
+                        log.error("(Callback) 토픽 '{}' 정보 조회 중 오류 발생: {}", topicName, throwable.getMessage());
                     }
                 });
+            }
+        }
+
+        @Override
+        public void describeTopicConfig(String topicName) {
+            // 1. 설정 조회의 대상을 지정하는 ConfigResource 객체 생성
+            ConfigResource topicResource = new ConfigResource(ConfigResource.Type.TOPIC, topicName);
+            log.info("토픽 '{}'의 설정을 조회합니다...", topicName);
+            try (AdminClient adminClient = AdminClient.create(kafkaAdmin.getConfigurationProperties())) {
+                DescribeConfigsResult result = adminClient.describeConfigs(Collections.singleton(topicResource));
+                Map<ConfigResource, Config> configs = result.all().get();
+                // 4. 설정값 출력
+                configs.forEach((resource, config) -> {
+                    log.info("'{}'의 설정:", resource.name());
+                    Collection<ConfigEntry> entries = config.entries();
+                    entries.forEach(entry -> {
+                        // 기본값이 아닌 설정만 출력
+                        if (!entry.isDefault()) {
+                            log.info("  - {} = {}", entry.name(), entry.value());
+                        }
+                    });
+                });
+            } catch (Exception e) {
+                log.error("토픽 '{}' 설정 조회 중 오류 발생: {}", topicName, e.getMessage());
             }
         }
     }
