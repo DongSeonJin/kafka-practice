@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.*;
 import org.apache.kafka.common.KafkaFuture;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.ConfigResource;
 import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,8 @@ public interface KafkaAdminService {
     void describeTopicAsync(String topicName);
 
     void describeTopicConfig(String topicName);
+
+    void deleteRecordsBeforeOffset(String topicName, int partition, long offset);
 
     @Service
     @Slf4j
@@ -122,6 +125,23 @@ public interface KafkaAdminService {
                 });
             } catch (Exception e) {
                 log.error("토픽 '{}' 설정 조회 중 오류 발생: {}", topicName, e.getMessage());
+            }
+        }
+
+        @Override
+        public void deleteRecordsBeforeOffset(String topicName, int partition, long offset) {
+            TopicPartition topicPartition = new TopicPartition(topicName, partition);
+            RecordsToDelete recordsToDelete = RecordsToDelete.beforeOffset(offset);
+            Map<TopicPartition, RecordsToDelete> recordsToDeleteMap = Map.of(topicPartition, recordsToDelete);
+
+            log.warn("🗑️ [AdminClient] 토픽 '{}'-{} 파티션에서 오프셋 {} 이전의 레코드를 삭제합니다",
+                    topicName, partition, offset);
+
+            try (AdminClient adminClient = AdminClient.create(kafkaAdmin.getConfigurationProperties())) {
+                adminClient.deleteRecords(recordsToDeleteMap).all().get();
+                log.info("[AdminClient] 레코드 삭제 요청이 성공적으로 완료되었습니다.");
+            } catch (Exception e) {
+                log.error("[AdminClient] 레코드 삭제 중 오류가 발생했습니다: {}", e.getMessage());
             }
         }
     }
